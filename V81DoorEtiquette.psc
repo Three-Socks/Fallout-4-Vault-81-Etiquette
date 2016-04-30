@@ -5,7 +5,7 @@ ObjectReference Property VaultDoorConsole Auto Const
 ObjectReference Property VaultDoorKlaxonLights01 Auto Const
 ObjectReference Property VaultDoorKlaxonLights02 Auto Const
 Quest Property V81_00_Intro Auto
-GlobalVariable Property Vault81Etiquette_door_state Auto
+GlobalVariable Property Vault81DoorEtiquette_state Auto
 
 ObjectReference Property VaultDoorConsoleFurniture Auto
 InputEnableLayer Property VaultDoorConsoleLayer Auto Hidden
@@ -21,11 +21,11 @@ Event OnCellLoad()
 
 		; Enable and reset our new console
 		Self.Enable()
-		;Self.PlayAnimation("reset")
+		Self.PlayAnimation("reset")
 		Self.BlockActivation(False, False)
 
 		; Run init code if door state is closed and allowed to run init
-		If (Vault81Etiquette_door_state.GetValue() == 0 && RunVaultDoorInit == 1)
+		If (Vault81DoorEtiquette_state.GetValue() == 0 && RunVaultDoorInit == 1)
 			; Reset VaultDoor anim
 			VaultDoor.PlayAnimation("reset")
 
@@ -37,14 +37,12 @@ Event OnCellLoad()
 			VaultDoorKlaxonLights01.Disable()
 			VaultDoorKlaxonLights02.Disable()
 
-			Vault81Etiquette_door_state.SetValue(1)
+			Vault81DoorEtiquette_state.SetValue(1)
 		EndIf
 	Else
 		; V81_00_Intro is not completed yet so block our console
-		;Self.BlockActivation(True, True)
+		Self.BlockActivation(True, True)
 		Self.Disable()
-		; TODO: Remove
-		Debug.MessageBox("V81DoorEtiquette Disabled self")
 	EndIf
 EndEvent
 
@@ -52,7 +50,7 @@ Event OnActivate(ObjectReference akActionRef)
 	Actor PlayerREF = Game.GetPlayer()
 
 	; Dont run unless the V81_00_Intro quest is completed and akActionRef is player and door state is closed
-	If (akActionRef == PlayerREF && V81_00_Intro.IsCompleted() && Vault81Etiquette_door_state.GetValue() == 1)
+	If (akActionRef == PlayerREF && V81_00_Intro.IsCompleted() && Vault81DoorEtiquette_state.GetValue() == 1)
 		if PlayerREF.IsInCombat()
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
@@ -62,7 +60,7 @@ Event OnActivate(ObjectReference akActionRef)
 
 			EnableKlaxonLights()
 			OpenVaultDoor()
-			Vault81Etiquette_door_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(0)
 		ElseIf PlayerREF.IsInPowerArmor()
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
@@ -72,12 +70,11 @@ Event OnActivate(ObjectReference akActionRef)
 
 			EnableKlaxonLights()
 			OpenVaultDoor()
-			Vault81Etiquette_door_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(0)
 		ElseIf PlayerREF.GetSitState() != 0
 			; Don't do a thing
 		else
 			;disable VATS controls 
-			Debug.trace("V81DoorEtiquette OnActivate")
 			VaultDoorConsoleLayer = InputEnableLayer.Create()
 			VaultDoorConsoleLayer.EnableVATS(False)
 			Self.BlockActivation(True, True)
@@ -95,7 +92,7 @@ Event OnActivate(ObjectReference akActionRef)
 			;patch 1.3 - 89054 - if the player ever gets up from the furniture (such as being hit) we need to know
 			RegisterForRemoteEvent(PlayerREF, "OnGetUp")
 
-			Vault81Etiquette_door_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(0)
 		EndIf
 	EndIf
 EndEvent
