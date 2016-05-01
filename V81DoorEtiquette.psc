@@ -24,8 +24,10 @@ Event OnCellLoad()
 		Self.PlayAnimation("reset")
 		Self.BlockActivation(False, False)
 
-		; Run init code if door state is closed and allowed to run init
-		If (Vault81DoorEtiquette_state.GetValue() == 0 && RunVaultDoorInit == 1)
+		Vault81DoorEtiquette_state.SetValue(0)
+
+		; Run init code if property allows
+		If RunVaultDoorInit == 1
 			; Reset VaultDoor anim
 			VaultDoor.PlayAnimation("reset")
 
@@ -36,8 +38,6 @@ Event OnCellLoad()
 			VaultDoorKlaxonLights02.GetLinkedRef().PlayAnimation("reset")
 			VaultDoorKlaxonLights01.Disable()
 			VaultDoorKlaxonLights02.Disable()
-
-			Vault81DoorEtiquette_state.SetValue(1)
 		EndIf
 	Else
 		; V81_00_Intro is not completed yet so block our console
@@ -50,7 +50,7 @@ Event OnActivate(ObjectReference akActionRef)
 	Actor PlayerREF = Game.GetPlayer()
 
 	; Dont run unless the V81_00_Intro quest is completed and akActionRef is player and door state is closed
-	If (akActionRef == PlayerREF && V81_00_Intro.IsCompleted() && Vault81DoorEtiquette_state.GetValue() == 1)
+	If (akActionRef == PlayerREF && V81_00_Intro.IsCompleted() && Vault81DoorEtiquette_state.GetValue() == 0)
 		if PlayerREF.IsInCombat()
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
@@ -60,7 +60,7 @@ Event OnActivate(ObjectReference akActionRef)
 
 			EnableKlaxonLights()
 			OpenVaultDoor()
-			Vault81DoorEtiquette_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(1)
 		ElseIf PlayerREF.IsInPowerArmor()
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
@@ -70,7 +70,7 @@ Event OnActivate(ObjectReference akActionRef)
 
 			EnableKlaxonLights()
 			OpenVaultDoor()
-			Vault81DoorEtiquette_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(1)
 		ElseIf PlayerREF.GetSitState() != 0
 			; Don't do a thing
 		else
@@ -92,7 +92,7 @@ Event OnActivate(ObjectReference akActionRef)
 			;patch 1.3 - 89054 - if the player ever gets up from the furniture (such as being hit) we need to know
 			RegisterForRemoteEvent(PlayerREF, "OnGetUp")
 
-			Vault81DoorEtiquette_state.SetValue(0)
+			Vault81DoorEtiquette_state.SetValue(1)
 		EndIf
 	EndIf
 EndEvent
