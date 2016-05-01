@@ -46,6 +46,13 @@ Event OnCellLoad()
 	EndIf
 EndEvent
 
+; Clean up incase of mod uninstall
+Event OnCellDetach()
+	; Revert our damage done to the cell and set everything back to how it was
+	Self.Disable()
+	VaultDoorConsole.Enable()
+EndEvent
+
 Event OnActivate(ObjectReference akActionRef)
 	Actor PlayerREF = Game.GetPlayer()
 
