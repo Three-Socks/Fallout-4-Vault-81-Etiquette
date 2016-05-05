@@ -118,11 +118,12 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 
 	;player presses the button
 	If (akSource == PlayerREF) && (asEventName == "Play01")
+		;depress button animation
+		Self.PlayAnimation("Stage3")
+
 		EnableKlaxonLights()
 		OpenVaultDoor()
 		UnRegisterForAnimationEvent(PlayerREF, "Play01")
-		;depress button animation
-		Self.PlayAnimation("Stage3")
 	EndIf
 
 	;if the vault control panel sequence is complete
