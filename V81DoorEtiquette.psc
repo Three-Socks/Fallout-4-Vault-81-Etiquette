@@ -4,17 +4,23 @@ ObjectReference Property VaultDoor Auto Const
 ObjectReference Property VaultDoorConsole Auto Const
 ObjectReference Property VaultDoorKlaxonLights01 Auto Const
 ObjectReference Property VaultDoorKlaxonLights02 Auto Const
-Quest Property V81_00_Intro Auto
+ObjectReference Property VaultDoorConsoleFurniture Auto Const
+
+Quest Property V81_00_Intro Auto Const
+
 GlobalVariable Property Vault81DoorEtiquette_state Auto
 
-ObjectReference Property VaultDoorConsoleFurniture Auto
 InputEnableLayer Property VaultDoorConsoleLayer Auto Hidden
 
 Bool Property RunVaultDoorInit Auto Const
 
 Event OnCellLoad()
+	debug.trace("V81DoorEtiquette - OnCellLoad")
+
 	; Dont run unless the V81_00_Intro quest is completed
 	If (V81_00_Intro.IsCompleted())
+
+		debug.trace("V81DoorEtiquette - V81_00_Intro IsCompleted true")
 
 		; Disable original console
 		VaultDoorConsole.Disable()
@@ -28,6 +34,8 @@ Event OnCellLoad()
 
 		; Run init code if property allows
 		If RunVaultDoorInit == 1
+			debug.trace("V81DoorEtiquette - RunVaultDoorInit = 1")
+
 			; Reset VaultDoor anim
 			VaultDoor.PlayAnimation("reset")
 
@@ -40,6 +48,8 @@ Event OnCellLoad()
 			VaultDoorKlaxonLights02.Disable()
 		EndIf
 	Else
+		debug.trace("V81DoorEtiquette - disable/block console")
+
 		; V81_00_Intro is not completed yet so block our console
 		Self.BlockActivation(True, True)
 		Self.Disable()
@@ -56,9 +66,15 @@ EndEvent
 Event OnActivate(ObjectReference akActionRef)
 	Actor PlayerREF = Game.GetPlayer()
 
+	debug.trace("V81DoorEtiquette - OnActivate")
+
 	; Dont run unless the V81_00_Intro quest is completed and akActionRef is player and door state is closed
 	If (akActionRef == PlayerREF && V81_00_Intro.IsCompleted() && Vault81DoorEtiquette_state.GetValue() == 0)
+		debug.trace("V81DoorEtiquette - OnActivate check1")
+
 		if PlayerREF.IsInCombat()
+			debug.trace("V81DoorEtiquette - OnActivate check combat")
+
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
 			Self.PlayAnimation("Stage2")
@@ -69,6 +85,8 @@ Event OnActivate(ObjectReference akActionRef)
 			OpenVaultDoor()
 			Vault81DoorEtiquette_state.SetValue(1)
 		ElseIf PlayerREF.IsInPowerArmor()
+			debug.trace("V81DoorEtiquette - OnActivate check power armor")
+
 			; skip the animation and go directly to opening everything
 			Self.BlockActivation(True, True)
 			Self.PlayAnimation("Stage2")
@@ -79,8 +97,11 @@ Event OnActivate(ObjectReference akActionRef)
 			OpenVaultDoor()
 			Vault81DoorEtiquette_state.SetValue(1)
 		ElseIf PlayerREF.GetSitState() != 0
+			debug.trace("V81DoorEtiquette - OnActivate check GetSitState")
 			; Don't do a thing
 		else
+			debug.trace("V81DoorEtiquette - OnActivate check2")
+
 			;disable VATS controls 
 			VaultDoorConsoleLayer = InputEnableLayer.Create()
 			VaultDoorConsoleLayer.EnableVATS(False)
@@ -96,10 +117,9 @@ Event OnActivate(ObjectReference akActionRef)
 			;wait for the button press to finish
 			RegisterForAnimationEvent(Self, "stage4")
 
-			;patch 1.3 - 89054 - if the player ever gets up from the furniture (such as being hit) we need to know
-			RegisterForRemoteEvent(PlayerREF, "OnGetUp")
-
 			Vault81DoorEtiquette_state.SetValue(1)
+
+			debug.trace("V81DoorEtiquette - OnActivate check2 done")
 		EndIf
 	EndIf
 EndEvent
@@ -107,8 +127,12 @@ EndEvent
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	Actor PlayerREF = Game.GetPlayer()
 
+	debug.trace("V81DoorEtiquette - OnAnimationEvent")
+
 	;player plugs in the pipboy
 	If (akSource == PlayerREF) && (asEventNAme == "On")
+		debug.trace("V81DoorEtiquette - OnAnimationEvent On")
+
 		UnregisterForAnimationEvent(PlayerREF, "On")
 		;flip open the glass
 		Self.PlayAnimation("Stage2")
@@ -118,6 +142,8 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 
 	;player presses the button
 	If (akSource == PlayerREF) && (asEventName == "Play01")
+		debug.trace("V81DoorEtiquette - OnAnimationEvent Play01")
+
 		;depress button animation
 		Self.PlayAnimation("Stage3")
 
@@ -128,37 +154,18 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 
 	;if the vault control panel sequence is complete
 	If (akSource == Self) && (asEventName == "stage4")
+		debug.trace("V81DoorEtiquette - OnAnimationEvent stage4")
+
 		UnRegisterForAnimationEvent(Self, "stage4")
 		;allow VATS again and delete layer
 		VaultDoorConsoleLayer.EnableVATS(True)
 		VaultDoorConsoleLayer = None
-
-		;patch 1.3 - 89054 - no need to catch the getup event anymore
-		UnRegisterForRemoteEvent(PlayerREF, "OnGetUp")
-	EndIf
-EndEvent
-
-;patch 1.3 - 89054 - if the player ever leaves the linked furniture, we need to clear the control lock and re-enable the console
-
-;need to create a function so I can call this remotely to fix savegames already in this state
-Function ResetVaultConsole()
-	Actor PlayerREF = Game.GetPlayer()
-	VaultDoorConsoleLayer.EnableVATS()
-	VaultDoorConsoleLayer = None
-	Self.BlockActivation(False, False)
-
-	;unregister for previously registered events
-	UnregisterForAllEvents()
-EndFunction
-
-Event Actor.OnGetUp(Actor akSender, ObjectReference akFurniture)
-	Actor PlayerREF = Game.GetPlayer()
-	If (akSender == PlayerREF) && (akFurniture == VaultDoorConsoleFurniture)
-		ResetVaultConsole()
 	EndIf
 EndEvent
 
 Function EnableKlaxonLights()
+	debug.trace("V81DoorEtiquette - EnableKlaxonLights")
+	
 	; Enable and animate KlaxonLightGlow and linked KlaxonLight
 	VaultDoorKlaxonLights01.Enable()
 	VaultDoorKlaxonLights02.Enable()
@@ -171,8 +178,10 @@ Function EnableKlaxonLights()
 EndFunction
 
 Function OpenVaultDoor()
+	debug.trace("V81DoorEtiquette - OpenVaultDoor")
+
 	; Reset VaultDoor again to make sure we never get stuck inside.
-	VaultDoor.PlayAnimation("reset")
+	;VaultDoor.PlayAnimation("reset")
 
 	; Open VaultDoor
 	VaultDoor.PlayAnimation("Stage2")
